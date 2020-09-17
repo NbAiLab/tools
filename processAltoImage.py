@@ -9,9 +9,14 @@ from os import path
 
 from xmlHandler import xmlHandler
 
+
+
+minimalNumberOfWordsInParagraph=6
+
 content=""
 globalAntallOver98=0
 globalAntallOrd=0
+globalSumWC=0
 
 def findAllTextBlocks(filen,urn):
     blockList=[]
@@ -25,6 +30,7 @@ def findTextInTextBlocks(hdl,urn,bList):
     global globalAntallOrd
     global content
     global globalAntallOver98
+    global globalSumWC
 
     for block in bList:
         searchString="Layout/Page/PrintSpace/TextBlock[@ID='" + block +"']"
@@ -35,42 +41,53 @@ def findTextInTextBlocks(hdl,urn,bList):
             sumwc=0
             antallOver98=0
             antallOver95 = 0
+
             for k in res3:
                 if 'SUBS_TYPE' not in k.attrib:
                     localstr += k.attrib['CONTENT'].strip()
                     localwc = float(k.attrib['WC'].strip())
                     sumwc += localwc
+                    if (len(res3) >= minimalNumberOfWordsInParagraph):
+                        globalSumWC+= localwc
+                        globalAntallOrd += 1
                     localstr += " "
                     if (localwc >= 0.98):
                         antallOver98 += 1
                         globalAntallOver98 += 1
                     if (localwc >= 0.95):
                         antallOver95 += 1
-                    globalAntallOrd += 1
+
 
                 elif 'SUBS_TYPE' in k.attrib and k.attrib['SUBS_TYPE'].strip() =='HypPart2':
                     localstr += k.attrib['SUBS_CONTENT'].strip()
                     localwc = float(k.attrib['WC'].strip())
                     sumwc += localwc
+
+                    if (len(res3) >= minimalNumberOfWordsInParagraph):
+                        globalSumWC+= localwc
+                        globalAntallOrd += 1
                     localstr += " "
                     if (localwc >= 0.98):
                         antallOver98 += 1
                         globalAntallOver98 += 1
                     if (localwc >= 0.95):
                         antallOver95 += 1
-                    globalAntallOrd += 1
+
                 elif 'SUBS_TYPE' in k.attrib and k.attrib['SUBS_TYPE'].strip() == 'HypPart1':
                     localwc = float(k.attrib['WC'].strip())
                     sumwc += localwc
+                    if (len(res3) >= minimalNumberOfWordsInParagraph):
+                        globalSumWC += localwc
+                        globalAntallOrd += 1
                     if (localwc >= 0.98):
                         antallOver98 += 1
                         globalAntallOver98 += 1
                     if (localwc >= 0.95):
                         antallOver95 += 1
-                    globalAntallOrd += 1
+
 
             if (len(res3)>0):
-                content+=urn + "_" + block + "_" + str(round(antallOver98/len(res3),2)) + "\n"
+                content+=urn + "_" + block + "_" + str(round(sumwc/len(res3),2)) + "\n"
                 content+=localstr + "\n"
                 #globalAntallOrd += 1
                 #print(urn + "_" + block + "_" + str(round(antallOver98/len(res3),2)) )
@@ -84,7 +101,7 @@ def main(inputDir):
     currentUrn=infiles[0].split('/')[-1].split('_')[0] + "_" + infiles[0].split('/')[-1].split('_')[1]
     for i in infiles:
         findAllTextBlocks(i,currentUrn)
-    print(currentUrn+ "_"+ str(round(globalAntallOver98/globalAntallOrd,2)))
+    print(currentUrn+ "_"+ str(round(globalSumWC/globalAntallOrd,2)))
     print(content)
 
 
