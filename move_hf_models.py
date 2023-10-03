@@ -3,6 +3,7 @@
 import requests
 import argparse
 import fnmatch
+from huggingface_hub import move_repo
 
 def list_models(organization, token):
     url = "https://huggingface.co/api/models"
@@ -22,21 +23,25 @@ def list_models(organization, token):
 def move_models(pattern, src_organization, dest_organization, token, execute):
     if not pattern.startswith(src_organization):
         pattern = f"{src_organization}/{pattern}"
-        
+
     models = list_models(src_organization, token)
 
     if models:
         filtered_models = [model['modelId'] for model in models if fnmatch.fnmatch(model['modelId'], pattern)]
 
         if filtered_models:
-            print("Models that will be moved:")
             for model in filtered_models:
-                print(f"{src_organization}/{model.split('/')[-1]} -> {dest_organization}/{model.split('/')[-1]}")
+                from_id = model  # model ID already includes organization
+                to_id = model.replace(src_organization, dest_organization)
+                print(f"Moving {from_id} to {to_id}")
+
+                if execute:
+                    try:
+                        move_repo(from_id=from_id, to_id=to_id)
+                    except Exception as e:
+                        print(f"Error: {e}")
         else:
             print("No models match the given pattern.")
-
-        if execute:
-            print("Executing the model transfer... (not implemented)")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Move models from one HF organization to another.')
