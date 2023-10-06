@@ -4,40 +4,30 @@ import requests
 import argparse
 import fnmatch
 from huggingface_hub import move_repo
+from huggingface_hub import list_models
 
-def list_models(organization, token):
-    url = "https://huggingface.co/api/models"
-    params = {"author": organization}
-    headers = {"Authorization": f"Bearer {token}"}
-    try:
-        response = requests.get(url, params=params, headers=headers)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Response Text: {response.text}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Request Error: {e}")
-        return None
+def list_all(src_organization, token):
+    models = list_models(author=src_organization)
+    return list(models)
 
 def move_models(pattern, src_organization, dest_organization, token, execute):
     if not pattern.startswith(src_organization):
         pattern = f"{src_organization}/{pattern}"
 
-    models = list_models(src_organization, token)
-
+    models = list_all(src_organization, token)
     if models:
-        filtered_models = [model['modelId'] for model in models if fnmatch.fnmatch(model['modelId'], pattern)]
+        filtered_models = [model.modelId for model in models if fnmatch.fnmatch(model.modelId, pattern)]
 
         if filtered_models:
             for model in filtered_models:
                 from_id = model  # model ID already includes organization
                 to_id = model.replace(src_organization, dest_organization)
-                print(f"Moving {from_id} to {to_id}")
+                print(f"Planning to move {from_id} to {to_id}")
 
                 if execute:
                     try:
                         move_repo(from_id=from_id, to_id=to_id)
+                        print(f"Moved model {from_id} to {to_id}")
                     except Exception as e:
                         print(f"Error: {e}")
         else:
