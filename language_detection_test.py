@@ -19,13 +19,13 @@ def main():
         true_lang = sample['language']
         
         # Detect the language
-        detected_lang, _ = detect_lang(text, langs=["nob","nno"],return_proba=True)
+        detected_lang, prob = detect_lang(text, langs=["nob","nno"],return_proba=True)
         
         # Check if the detected language is correct
         if detected_lang == true_lang:
             correct += 1
         else:
-            print(f"Error: Text: '{text}' | Prediction: {detected_lang} | Target: {true_lang}")
+            print(f"Error: Text: '{text}'| Prediction: {detected_lang} | Target: {true_lang} | Confidence: {prob}")
         
         # For calculating F1 score
         y_true.append(true_lang)
